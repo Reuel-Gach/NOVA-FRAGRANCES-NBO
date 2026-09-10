@@ -20,7 +20,6 @@ export async function addProduct(formData: FormData) {
     
     // Refreshes the admin page to show the new data
     revalidatePath('/admin'); 
-    return { success: true };
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to add product to database.');

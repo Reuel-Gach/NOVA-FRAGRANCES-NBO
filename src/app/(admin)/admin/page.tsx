@@ -5,10 +5,10 @@ import { UserButton } from '@clerk/nextjs';
 export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Banice's Command Center</h1>
-        <UserButton afterSignOutUrl="/" />
-      </header>
+    <header className="flex justify-between items-center mb-8">
+      <h1 className="text-2xl font-bold text-gray-900">Banice's Command Center</h1>
+      <UserButton />
+    </header>
 
       <main className="max-w-2xl bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 mb-6 border-b pb-4">
