@@ -2,6 +2,7 @@ import { ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { Show, UserButton } from '@clerk/nextjs';
 import CartIndicator from '@/components/CartIndicator';
+import { Toaster } from 'react-hot-toast';
 
 export default function StorefrontLayout({
   children,
@@ -10,6 +11,7 @@ export default function StorefrontLayout({
 }) {
   return (
     <div className="min-h-screen bg-[#090D0B] text-white selection:bg-emerald-500 selection:text-black">
+      <Toaster position="top-center"/>
       {/* Navigation Bar */}
       <nav className="border-b border-emerald-500/20 p-4 sticky top-0 bg-[#090D0B]/80 backdrop-blur-md z-50">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
