@@ -11,10 +11,9 @@ interface OrderPayload {
   items: any[];
 }
 
-export async function processOrder(payload: OrderPayload) {
+export async function processOrder(payload: OrderPayload): Promise<{ success: boolean; orderId: string }> {
   const { customerName, customerPhone, location, totalAmount, items } = payload;
   
-  // Generate a valid UUID v4 that PostgreSQL expects for uuid columns
   const orderId = crypto.randomUUID();
 
   try {
@@ -39,7 +38,7 @@ export async function processOrder(payload: OrderPayload) {
     }
 
     revalidatePath('/');
-    return { success: true };
+    return { success: true, orderId };
   } catch (error) {
     console.error('Order processing error:', error);
     throw new Error('Failed to complete order.');
