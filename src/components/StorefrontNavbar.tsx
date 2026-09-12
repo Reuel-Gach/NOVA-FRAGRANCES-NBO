@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, User } from 'lucide-react';
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { Show, UserButton } from '@clerk/nextjs';
 import CartButton from '@/components/CartButton';
 
 export default function StorefrontNavbar() {
@@ -27,15 +27,15 @@ export default function StorefrontNavbar() {
 
         {/* Right Actions: Auth, Cart, & Mobile Menu Toggle */}
         <div className="flex items-center gap-4">
-          <SignedIn>
+          <Show when="signed-in">
             <UserButton />
-          </SignedIn>
+          </Show>
           
-          <SignedOut>
+          <Show when="signed-out">
             <Link href="/sign-in" className="text-gray-400 hover:text-emerald-400 transition-colors p-1">
               <User className="w-5 h-5" />
             </Link>
-          </SignedOut>
+          </Show>
 
           <CartButton />
 
