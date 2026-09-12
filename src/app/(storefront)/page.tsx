@@ -33,9 +33,7 @@ export default async function StorefrontPage({
               Ready for Fast Dispatch in <span className="text-emerald-400">Kiambu & Nairobi</span>
             </span>
           </div>
-          <div className="flex items-center gap-4 text-xs text-emerald-400 font-bold uppercase tracking-wider">
-            <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> 100% Authentic Stock</span>
-          </div>
+
         </div>
       </div>
 
