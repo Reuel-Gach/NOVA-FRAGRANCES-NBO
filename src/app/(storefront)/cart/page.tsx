@@ -38,13 +38,16 @@ export default function CartPage() {
     };
     
     try {
-      await processOrder(payload);
+      // Capture the result to get the generated orderId
+      const result = await processOrder(payload);
       
       clearCart();
-      toast.success('Order placed successfully! We will contact you soon.', {
+      toast.success('Order placed successfully!', {
         style: { background: '#121A16', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)' }
       });
-      setTimeout(() => router.push('/'), 2000);
+      
+      // Redirect to the customer's specific order tracking page
+      setTimeout(() => router.push(`/order/${result.orderId}`), 2000);
     } catch (error) {
       toast.error('Something went wrong. Please try again.');
       setIsSubmitting(false);
