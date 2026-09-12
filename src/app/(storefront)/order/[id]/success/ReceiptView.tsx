@@ -8,7 +8,7 @@ export default function ReceiptView({ order, items }: { order: any; items: any[]
   const whatsappMsg = encodeURIComponent(
     `Hi Banice, I have just placed order #${order.order_id.slice(0, 8).toUpperCase()} on Nova Fragrances for Ksh ${Number(order.total_price).toLocaleString()}. Please confirm dispatch!`
   );
-  const whatsappUrl = `https://wa.me/254700000000?text=${whatsappMsg}`;
+  const whatsappUrl = `https://wa.me/254106935284?text=${whatsappMsg}`;
 
   return (
     <main className="min-h-screen bg-[#060908] text-white p-4 md:p-8 flex items-center justify-center selection:bg-emerald-500 selection:text-black">
