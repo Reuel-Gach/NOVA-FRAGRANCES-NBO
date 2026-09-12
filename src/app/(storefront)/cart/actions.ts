@@ -13,17 +13,14 @@ interface OrderPayload {
 
 export async function processOrder(payload: OrderPayload): Promise<{ success: boolean; orderId: string }> {
   const { customerName, customerPhone, location, totalAmount, items } = payload;
-  
   const orderId = crypto.randomUUID();
 
   try {
-    // 1. Create the main order record
     await sql`
       INSERT INTO Orders (order_id, customer_name, customer_phone, location, total_price, payment_status, order_source)
       VALUES (${orderId}, ${customerName}, ${customerPhone}, ${location}, ${totalAmount}, 'Pending', 'Web')
     `;
 
-    // 2. Log items and deduct stock
     for (const item of items) {
       await sql`
         INSERT INTO Order_Items (order_id, product_id, quantity, price_at_purchase)
