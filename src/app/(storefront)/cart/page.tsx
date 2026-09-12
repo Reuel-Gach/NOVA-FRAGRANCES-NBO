@@ -149,7 +149,7 @@ export default function CartPage() {
             <form onSubmit={handleCheckout} className="space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Full Name</label>
-                <input required type="text" name="customer_name" className="w-full rounded-xl bg-black border border-emerald-500/30 px-4 py-3 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="e.g. Reuel Gachuki" />
+                <input required type="text" name="customer_name" className="w-full rounded-xl bg-black border border-emerald-500/30 px-4 py-3 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"  />
               </div>
               
               <div>
@@ -159,7 +159,7 @@ export default function CartPage() {
               
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Delivery Location</label>
-                <input required type="text" name="location" className="w-full rounded-xl bg-black border border-emerald-500/30 px-4 py-3 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Ruiru, Kiambu" />
+                <input required type="text" name="location" className="w-full rounded-xl bg-black border border-emerald-500/30 px-4 py-3 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Thika, Kiambu" />
               </div>
 
               <button 
@@ -167,7 +167,7 @@ export default function CartPage() {
                 type="submit" 
                 className="w-full bg-emerald-500 text-black font-extrabold uppercase text-xs tracking-widest py-4 rounded-xl hover:bg-emerald-400 disabled:opacity-50 mt-6 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {isSubmitting ? 'Processing Order...' : <>Complete Secure Order <ArrowRight className="w-4 h-4" /></>}
+                {isSubmitting ? 'Processing Order...' : <>Complete Order <ArrowRight className="w-4 h-4" /></>}
               </button>
             </form>
           </div>
