@@ -10,7 +10,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className="bg-white dark:bg-[#090D0B] text-gray-900 dark:text-white transition-colors duration-300">
+        <body className="bg-white dark:bg-[#060908] text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
           <ThemeProvider>
             {children}
           </ThemeProvider>

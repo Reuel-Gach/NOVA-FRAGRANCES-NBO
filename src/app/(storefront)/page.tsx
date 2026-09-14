@@ -20,11 +20,11 @@ export default async function StorefrontPage({
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-[#060908] text-gray-900 dark:text-white p-3 md:p-8 selection:bg-emerald-500 selection:text-black transition-colors duration-300">
+    <main className="min-h-screen bg-white dark:bg-[#060908] text-gray-900 dark:text-white p-3 md:p-8 selection:bg-emerald-500 selection:text-black transition-colors duration-300">
       
       {/* Local Trust & Dispatch Header Banner */}
       <div className="max-w-[1400px] mx-auto mb-6">
-        <div className="bg-white dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#121A16] dark:to-emerald-950/40 border border-emerald-500/20 rounded-2xl px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-md dark:shadow-lg transition-colors">
+        <div className="bg-gray-50 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#121A16] dark:to-emerald-950/40 border border-emerald-500/20 rounded-2xl px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-sm dark:shadow-lg transition-colors">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-emerald-500/10 rounded-xl">
               <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
@@ -37,7 +37,7 @@ export default async function StorefrontPage({
       </div>
 
       {/* Immersive Cinematic Hero Section */}
-      <div className="max-w-[1400px] mx-auto mb-10 relative overflow-hidden rounded-3xl bg-white dark:bg-gradient-to-r dark:from-emerald-950/60 dark:via-[#121A16] dark:to-black border border-emerald-500/20 p-6 md:p-12 shadow-xl dark:shadow-2xl transition-colors">
+      <div className="max-w-[1400px] mx-auto mb-10 relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gradient-to-r dark:from-emerald-950/60 dark:via-[#121A16] dark:to-black border border-emerald-500/20 p-6 md:p-12 shadow-md dark:shadow-2xl transition-colors">
         <div className="max-w-2xl">
           <span className="inline-block bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest mb-3">
             Flagship Curation • Live Stock
@@ -49,7 +49,7 @@ export default async function StorefrontPage({
             Bottled authenticity, hand-curated and dispatched straight from our shelves in Kiambu & Nairobi. Experience notes designed to linger.
           </p>
           {category && (
-            <Link href="/" className="inline-block text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 uppercase tracking-widest transition-colors bg-gray-100 dark:bg-black/60 border border-emerald-500/30 px-5 py-2.5 rounded-xl shadow">
+            <Link href="/" className="inline-block text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 uppercase tracking-widest transition-colors bg-white dark:bg-black/60 border border-emerald-500/30 px-5 py-2.5 rounded-xl shadow">
               ← View All Scents
             </Link>
           )}
