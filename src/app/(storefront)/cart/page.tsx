@@ -3,15 +3,15 @@
 import { useCartStore } from '@/lib/cart-store';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { processOrder } from './actions';
 import toast, { Toaster } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, Smartphone } from 'lucide-react';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentPending, setPaymentPending] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,27 +27,66 @@ export default function CartPage() {
     setIsSubmitting(true);
     
     const formData = new FormData(event.currentTarget);
+    const orderId = crypto.randomUUID();
     
     const payload = {
+      orderId,
       customerName: formData.get('customer_name') as string,
-      customerPhone: formData.get('customer_phone') as string,
+      phone: formData.get('customer_phone') as string,
       location: formData.get('location') as string,
-      totalAmount,
+      amount: totalAmount,
       items
     };
     
     try {
-      const result = await processOrder(payload);
-      
-      clearCart();
-      toast.success('Order placed successfully!', {
-        style: { background: '#121A16', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)' }
+      // 1. Trigger STK Push
+      const response = await fetch('/api/mpesa/stkpush', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       
-      setTimeout(() => router.push(`/order/${result.orderId}/success`), 1500);
-    } catch (error) {
-      toast.error('Something went wrong. Please try again.');
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to initiate M-Pesa payment');
+      }
+
+      setPaymentPending(true);
+      toast.success('M-Pesa prompt sent! Check your phone.');
+
+      // 2. Poll for Payment Success every 3 seconds
+      const pollInterval = setInterval(async () => {
+        const statusRes = await fetch(`/api/order/${orderId}/status`);
+        const statusData = await statusRes.json();
+
+        if (statusData.status === 'Paid') {
+          clearInterval(pollInterval);
+          clearCart();
+          toast.success('Payment Received!');
+          router.push(`/order/${orderId}/success`);
+        } else if (statusData.status === 'Failed') {
+          clearInterval(pollInterval);
+          setPaymentPending(false);
+          setIsSubmitting(false);
+          toast.error('Payment failed or cancelled. Please try again.');
+        }
+      }, 3000);
+
+      // Timeout polling after 60 seconds (M-Pesa timeout)
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (paymentPending) {
+          setPaymentPending(false);
+          setIsSubmitting(false);
+          toast.error('Payment verification timed out.');
+        }
+      }, 60000);
+
+    } catch (error: any) {
+      toast.error(error.message || 'Something went wrong.');
       setIsSubmitting(false);
+      setPaymentPending(false);
     }
   }
 
@@ -67,6 +106,25 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#060908] text-white py-10 px-4 md:px-8 selection:bg-emerald-500 selection:text-black">
       <Toaster position="top-center" />
+      
+      {/* Payment Loading Overlay */}
+      {paymentPending && (
+        <div className="fixed inset-0 bg-[#060908]/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 text-center">
+          <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mb-6 animate-pulse">
+            <Smartphone className="w-10 h-10 text-emerald-400 animate-bounce" />
+          </div>
+          <h2 className="text-2xl font-serif text-white mb-2">Awaiting M-Pesa Payment</h2>
+          <p className="text-gray-400 text-sm max-w-sm mb-8">
+            Please check your phone. An M-Pesa prompt has been sent to your number. Enter your PIN to complete the Ksh {totalAmount.toLocaleString()} payment.
+          </p>
+          <div className="flex gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping delay-75"></div>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping delay-150"></div>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping delay-300"></div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-serif text-white mb-8 tracking-tight">Shopping Bag</h1>
         
@@ -94,29 +152,23 @@ export default function CartPage() {
                   </div>
 
                   <div className="flex items-center justify-between w-full sm:w-auto gap-4">
-                    {/* Quantity Stepper Controls */}
                     <div className="flex items-center bg-black border border-emerald-500/30 rounded-xl overflow-hidden">
                       <button 
                         onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
                         className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                        aria-label="Decrease quantity"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
-                      
                       <input 
                         type="number" 
                         min="1" 
-                        max={item.stock_quantity}
                         value={item.quantity} 
                         onChange={(e) => updateQuantity(item.product_id, parseInt(e.target.value) || 1)}
                         className="w-10 bg-transparent text-center text-xs font-bold text-white focus:outline-none"
                       />
-
                       <button 
                         onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
                         className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                        aria-label="Increase quantity"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -153,8 +205,8 @@ export default function CartPage() {
               </div>
               
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Phone Number</label>
-                <input required type="tel" name="customer_phone" className="w-full rounded-xl bg-black border border-emerald-500/30 px-4 py-3 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="07XX XXX XXX" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">M-Pesa Number</label>
+                <input required type="tel" name="customer_phone" className="w-full rounded-xl bg-black border border-emerald-500/30 px-4 py-3 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="07XX XXX XXX or 2547XX..." />
               </div>
               
               <div>
@@ -165,9 +217,9 @@ export default function CartPage() {
               <button 
                 disabled={isSubmitting} 
                 type="submit" 
-                className="w-full bg-emerald-500 text-black font-extrabold uppercase text-xs tracking-widest py-4 rounded-xl hover:bg-emerald-400 disabled:opacity-50 mt-6 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-[#10b981] hover:bg-[#059669] text-black font-extrabold uppercase text-xs tracking-widest py-4 rounded-xl disabled:opacity-50 mt-6 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {isSubmitting ? 'Processing Order...' : <>Complete Order <ArrowRight className="w-4 h-4" /></>}
+                {isSubmitting ? 'Processing...' : <>Pay with M-Pesa <Smartphone className="w-4 h-4" /></>}
               </button>
             </form>
           </div>
