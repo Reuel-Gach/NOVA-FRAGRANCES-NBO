@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { CheckCircle2, Download, MessageCircle, ArrowRight, Store } from 'lucide-react';
 
 export default function ReceiptView({ order, items }: { order: any; items: any[] }) {
-  // WhatsApp message for order verification
+  // WhatsApp message addressing the business
   const whatsappMsg = encodeURIComponent(
-    `Hi Banice, I have just placed order #${order.order_id.slice(0, 8).toUpperCase()} on Nova Fragrances for Ksh ${Number(order.total_price).toLocaleString()}. Please confirm dispatch!`
+    `Hi Nova Fragrances Nbo, I have just placed order #${order.order_id.slice(0, 8).toUpperCase()} for Ksh ${Number(order.total_price).toLocaleString()}. Please confirm dispatch!`
   );
   const whatsappUrl = `https://wa.me/254106935284?text=${whatsappMsg}`;
 
@@ -85,14 +85,14 @@ export default function ReceiptView({ order, items }: { order: any; items: any[]
             <Download className="w-4 h-4" /> Download / Print Receipt PDF
           </button>
 
-          {/* WhatsApp Confirmation to Banice */}
+          {/* WhatsApp Confirmation */}
           <a 
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold uppercase tracking-widest py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)]"
           >
-            <MessageCircle className="w-4 h-4 fill-black text-emerald-500" /> Send Confirmation to Banice on WhatsApp
+            <MessageCircle className="w-4 h-4 fill-black text-emerald-500" /> Send Confirmation on WhatsApp
           </a>
 
           {/* Return to Store */}
@@ -105,7 +105,6 @@ export default function ReceiptView({ order, items }: { order: any; items: any[]
 
       </div>
 
-      {/* Styled JSX now works perfectly because this is a Client Component */}
       <style jsx global>{`
         @media print {
           body * {
