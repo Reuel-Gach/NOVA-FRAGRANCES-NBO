@@ -63,6 +63,7 @@ export default function CartPage() {
         if (statusData.status === 'Paid') {
           clearInterval(pollInterval);
           clearCart();
+          localStorage.setItem('nova_has_ordered', 'true');
           toast.success('Payment Received!');
           router.push(`/order/${orderId}/success`);
         } else if (statusData.status === 'Failed') {

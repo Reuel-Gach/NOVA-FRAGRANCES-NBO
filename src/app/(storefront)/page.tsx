@@ -24,7 +24,7 @@ export default async function StorefrontPage({
       
       {/* Local Trust & Dispatch Header Banner */}
       <div className="max-w-[1400px] mx-auto mb-6">
-        <div className="bg-gray-50 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#121A16] dark:to-emerald-950/40 border border-emerald-500/20 rounded-2xl px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-sm dark:shadow-lg transition-colors">
+        <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 rounded-2xl px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-sm dark:shadow-[0_4px_20px_rgba(4,120,87,0.1)] transition-colors">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-emerald-500/10 rounded-xl">
               <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
@@ -37,15 +37,15 @@ export default async function StorefrontPage({
       </div>
 
       {/* Immersive Cinematic Hero Section */}
-      <div className="max-w-[1400px] mx-auto mb-10 relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gradient-to-r dark:from-emerald-950/60 dark:via-[#121A16] dark:to-black border border-emerald-500/20 p-6 md:p-12 shadow-md dark:shadow-2xl transition-colors">
-        <div className="max-w-2xl">
+      <div className="max-w-[1400px] mx-auto mb-10 relative overflow-hidden rounded-3xl bg-emerald-50 dark:bg-emerald-950/30 dark:bg-gradient-to-r dark:from-emerald-950/50 dark:to-emerald-900/10 border border-emerald-500/30 p-6 md:p-12 shadow-md dark:shadow-[0_8px_30px_rgba(4,120,87,0.15)] transition-colors">
+        <div className="max-w-2xl relative z-10">
           <span className="inline-block bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest mb-3">
             Flagship Curation • Live Stock
           </span>
           <h1 className="text-3xl md:text-5xl font-serif text-gray-900 dark:text-white mb-3 tracking-tight">
             {category ? `${category} Collection` : 'The Art of Signature Scent'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm leading-relaxed mb-6">
+          <p className="text-gray-700 dark:text-gray-300 text-xs md:text-sm leading-relaxed mb-6">
             Bottled authenticity, hand-curated and dispatched straight from our shelves in Kiambu & Nairobi. Experience notes designed to linger.
           </p>
           {category && (

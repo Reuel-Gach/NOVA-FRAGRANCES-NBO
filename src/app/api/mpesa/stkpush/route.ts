@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
+// Helper function to generate a random 8-character ID starting with 'D'
+function generateShortId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'D';
+  for (let i = 0; i < 7; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export async function POST(req: Request) {
   try {
     const { phone, amount, orderId, customerName, location, items } = await req.json();
@@ -38,6 +48,9 @@ export async function POST(req: Request) {
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
+    // Generate our new clean tracking ID!
+    const shortId = generateShortId();
+
     // 5. Send STK Push Request
     const stkRes = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
       method: 'POST',
@@ -55,7 +68,7 @@ export async function POST(req: Request) {
         PartyB: shortcode,
         PhoneNumber: formattedPhone,
         CallBackURL: callbackUrl,
-        AccountReference: `Nova ${orderId.slice(0, 5)}`,
+        AccountReference: `Nova ${shortId}`, // Using the short ID in the M-Pesa prompt!
         TransactionDesc: 'Fragrance Purchase'
       })
     });
@@ -66,10 +79,10 @@ export async function POST(req: Request) {
       throw new Error(stkData.errorMessage || 'Safaricom rejected the STK request. Check Daraja credentials.');
     }
 
-    // 6. Save the Pending Order with the CheckoutRequestID
+    // 6. Save the Pending Order with the CheckoutRequestID AND the new short_id
     await sql`
-      INSERT INTO Orders (order_id, customer_name, customer_phone, location, total_price, payment_status, order_source, checkout_request_id)
-      VALUES (${orderId}, ${customerName}, ${phone}, ${location}, ${amount}, 'Pending', 'Web', ${stkData.CheckoutRequestID})
+      INSERT INTO Orders (order_id, customer_name, customer_phone, location, total_price, payment_status, order_source, checkout_request_id, short_id, delivery_status)
+      VALUES (${orderId}, ${customerName}, ${phone}, ${location}, ${amount}, 'Pending', 'Web', ${stkData.CheckoutRequestID}, ${shortId}, 'Processing')
     `;
 
     // Save Order Items

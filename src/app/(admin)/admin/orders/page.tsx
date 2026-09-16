@@ -1,105 +1,85 @@
 import { sql } from '@/lib/db';
-import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Phone, MapPin, ArrowLeft } from 'lucide-react';
-import OrderActions from './OrderActions'; 
+import { Eye } from 'lucide-react';
 
 export default async function AdminOrdersPage() {
+  // Fetch all orders that have a short_id
   const orders = await sql`
-    SELECT o.*, 
-           json_agg(json_build_object('name', p.name, 'quantity', oi.quantity, 'price', oi.price_at_purchase)) as items
-    FROM Orders o
-    LEFT JOIN Order_Items oi ON o.order_id = oi.order_id
-    LEFT JOIN Products p ON oi.product_id = p.product_id
-    GROUP BY o.order_id
-    ORDER BY o.order_id DESC
+    SELECT * FROM Orders 
+    WHERE short_id IS NOT NULL 
+    ORDER BY order_id DESC
   `;
 
   return (
-    <div className="min-h-screen bg-[#090D0B] text-white p-4 md:p-8 selection:bg-emerald-500 selection:text-black">
-      <nav className="border-b border-emerald-500/20 pb-4 mb-8 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <Link href="/admin" className="text-gray-400 hover:text-emerald-400 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <span className="text-xl font-bold tracking-widest uppercase text-emerald-400">
-            Live Order Queue
-          </span>
-        </div>
-        <UserButton />
-      </nav>
-
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-serif mb-2 text-white">Incoming Customer Orders</h1>
-        <p className="text-gray-400 mb-8">Manage web purchases, coordinate with Sacco riders, and update fulfillment.</p>
-
-        <div className="space-y-6">
-          {orders.map((order: any) => {
-            const cleanPhone = order.customer_phone.startsWith('0') 
-              ? `254${order.customer_phone.slice(1)}` 
-              : order.customer_phone;
-            
-            const isCancelled = order.payment_status === 'Cancelled';
-
-            return (
-              <div key={order.order_id} className={`bg-[#121A16] border rounded-2xl p-6 shadow-xl transition-all ${isCancelled ? 'border-red-500/20 opacity-75' : 'border-emerald-500/20'}`}>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-emerald-500/10 gap-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h2 className={`text-lg font-bold ${isCancelled ? 'text-gray-400 line-through' : 'text-white'}`}>{order.customer_name}</h2>
-                      <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
-                        order.payment_status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
-                        isCancelled ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                        'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+    <div className="min-h-screen bg-white dark:bg-[#060908] text-gray-900 dark:text-white p-4 md:p-8 transition-colors duration-300">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-serif mb-8 text-emerald-600 dark:text-emerald-400">Logistics & Dispatch</h1>
+        
+        <div className="bg-gray-50 dark:bg-[#0E1512] border border-emerald-500/20 rounded-3xl p-6 shadow-xl overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr className="border-b border-emerald-500/20 text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                <th className="p-3">Tracking ID</th>
+                <th className="p-3">Customer Details</th>
+                <th className="p-3">Amount</th>
+                <th className="p-3">Status</th>
+                <th className="p-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.order_id} className="border-b border-emerald-500/10 hover:bg-white/50 dark:hover:bg-black/20 transition-colors">
+                  
+                  {/* Tracking ID */}
+                  <td className="p-3 font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    #{order.short_id}
+                  </td>
+                  
+                  {/* Customer Info */}
+                  <td className="p-3">
+                    <div className="text-sm font-bold">{order.customer_name}</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{order.location}</div>
+                  </td>
+                  
+                  {/* Price */}
+                  <td className="p-3 text-sm font-bold text-amber-600 dark:text-amber-400">
+                    Ksh {Number(order.total_price).toLocaleString()}
+                  </td>
+                  
+                  {/* Combined Statuses */}
+                  <td className="p-3">
+                    <div className="flex flex-col gap-1.5 items-start">
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                        order.payment_status === 'Paid' 
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' 
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
                       }`}>
-                        {order.payment_status}
+                        Pay: {order.payment_status}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        Box: {order.delivery_status || 'Processing'}
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                      <span className="flex items-center gap-1.5"><Phone className={`w-3.5 h-3.5 ${isCancelled ? 'text-red-400' : 'text-emerald-400'}`} /> {order.customer_phone}</span>
-                      <span className="flex items-center gap-1.5"><MapPin className={`w-3.5 h-3.5 ${isCancelled ? 'text-red-400' : 'text-emerald-400'}`} /> {order.location}</span>
-                    </div>
-                  </div>
-
-                  {!isCancelled && (
-                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                      <a 
-                        href={`https://wa.me/${cleanPhone}?text=Hi%20${order.customer_name},%20we%20have%20received%20your%20Nova%20Fragrances%20order%20and%20are%20arranging%20dispatch%20to%20${order.location}.`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex-1 md:flex-none text-center bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all"
-                      >
-                        WhatsApp
-                      </a>
-                      
-                      {/* Client Component for Action Buttons */}
-                      <OrderActions orderId={order.order_id} currentStatus={order.payment_status} />
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-4">
-                  <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isCancelled ? 'text-red-400' : 'text-emerald-400'}`}>Purchased Fragrances</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                    {order.items?.map((item: any, idx: number) => (
-                      <div key={idx} className={`bg-black/40 border p-3 rounded-xl flex justify-between items-center ${isCancelled ? 'border-red-900/30' : 'border-emerald-500/10'}`}>
-                        <span className={`text-sm font-medium ${isCancelled ? 'text-gray-500' : 'text-gray-200'}`}>{item.name} × {item.quantity}</span>
-                        <span className={`text-sm font-bold ${isCancelled ? 'text-gray-500' : 'text-amber-400'}`}>Ksh {item.price * item.quantity}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className={`flex justify-between items-center pt-3 border-t font-bold ${isCancelled ? 'border-red-900/30' : 'border-emerald-500/10'}`}>
-                    <span className="text-gray-500 text-sm">Total Revenue</span>
-                    <span className={`text-xl font-serif ${isCancelled ? 'text-gray-500 line-through' : 'text-amber-400'}`}>Ksh {order.total_price}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                  </td>
+                  
+                  {/* Action Button */}
+                  <td className="p-3 text-right">
+                    <Link 
+                      href={`/admin/orders/${order.short_id}`}
+                      className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-black px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View Order
+                    </Link>
+                  </td>
+                  
+                </tr>
+              ))}
+            </tbody>
+          </table>
           
           {orders.length === 0 && (
-            <div className="text-center py-20 bg-[#121A16] border border-emerald-500/20 rounded-2xl">
-              <p className="text-gray-400">No incoming customer orders yet.</p>
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">No trackable orders found yet.</p>
             </div>
           )}
         </div>

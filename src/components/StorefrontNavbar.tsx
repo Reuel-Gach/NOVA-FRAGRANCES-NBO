@@ -1,14 +1,23 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, MapPin } from 'lucide-react';
 import { Show, UserButton } from '@clerk/nextjs';
 import CartButton from '@/components/CartButton';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function StorefrontNavbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasOrdered, setHasOrdered] = useState(false);
+
+  // Check local storage on mount to see if this device has made an order
+  useEffect(() => {
+    const orderFlag = localStorage.getItem('nova_has_ordered');
+    if (orderFlag === 'true') {
+      setHasOrdered(true);
+    }
+  }, []);
 
   return (
     <nav className="border-b border-emerald-500/20 px-4 py-4 sticky top-0 bg-white/90 dark:bg-[#090D0B]/90 backdrop-blur-md z-50 transition-colors duration-300">
@@ -19,11 +28,18 @@ export default function StorefrontNavbar() {
           Nova Fragrances
         </Link>
 
-        {/* Desktop Categories */}
-        <div className="hidden md:flex gap-6 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">
+        {/* Desktop Categories & Dynamic Tracking Link */}
+        <div className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">
           <Link href="/?category=Masculine" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Masculine</Link>
           <Link href="/?category=Feminine" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Feminine</Link>
           <Link href="/?category=Unisex" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Unisex</Link>
+          
+          {/* Dynamically shown only if the customer has made an order */}
+          {hasOrdered && (
+            <Link href="/track" className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors ml-4 pl-4 border-l border-emerald-500/20">
+              <MapPin className="w-3.5 h-3.5" /> Track Order
+            </Link>
+          )}
         </div>
 
         {/* Right Actions: Theme Toggle, Auth, Cart, & Mobile Menu Toggle */}
@@ -77,6 +93,17 @@ export default function StorefrontNavbar() {
           >
             Unisex
           </Link>
+          
+          {/* Mobile Dynamic Tracking Link */}
+          {hasOrdered && (
+            <Link 
+              href="/track" 
+              onClick={() => setIsOpen(false)}
+              className="py-3 mt-2 border-t border-emerald-500/20 text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              <MapPin className="w-4 h-4" /> Track Order
+            </Link>
+          )}
         </div>
       )}
     </nav>
