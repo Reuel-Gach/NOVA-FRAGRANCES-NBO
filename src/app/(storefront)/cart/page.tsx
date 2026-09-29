@@ -5,13 +5,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import toast, { Toaster } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import { Trash2, Plus, Minus, ArrowRight, Smartphone } from 'lucide-react';
+import { Trash2, Plus, Minus, MessageCircle } from 'lucide-react';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentPending, setPaymentPending] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,8 +38,8 @@ export default function CartPage() {
     };
     
     try {
-      // 1. Trigger STK Push
-      const response = await fetch('/api/mpesa/stkpush', {
+      // Send to the new manual checkout API route
+      const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -48,46 +47,19 @@ export default function CartPage() {
       
       const data = await response.json();
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to initiate M-Pesa payment');
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to submit order');
       }
 
-      setPaymentPending(true);
-      toast.success('M-Pesa prompt sent! Check your phone.');
-
-      // 2. Poll for Payment Success every 3 seconds
-      const pollInterval = setInterval(async () => {
-        const statusRes = await fetch(`/api/order/${orderId}/status`);
-        const statusData = await statusRes.json();
-
-        if (statusData.status === 'Paid') {
-          clearInterval(pollInterval);
-          clearCart();
-          localStorage.setItem('nova_has_ordered', 'true');
-          toast.success('Payment Received!');
-          router.push(`/order/${orderId}/success`);
-        } else if (statusData.status === 'Failed') {
-          clearInterval(pollInterval);
-          setPaymentPending(false);
-          setIsSubmitting(false);
-          toast.error('Payment failed or cancelled. Please try again.');
-        }
-      }, 3000);
-
-      // Timeout polling after 60 seconds (M-Pesa timeout)
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        if (paymentPending) {
-          setPaymentPending(false);
-          setIsSubmitting(false);
-          toast.error('Payment verification timed out.');
-        }
-      }, 60000);
+      // Success! Clear cart and redirect to success page
+      clearCart();
+      localStorage.setItem('nova_has_ordered', 'true');
+      toast.success('Order Received! We will WhatsApp you shortly.');
+      router.push(`/order/${orderId}/success`);
 
     } catch (error: any) {
       toast.error(error.message || 'Something went wrong.');
       setIsSubmitting(false);
-      setPaymentPending(false);
     }
   }
 
@@ -108,24 +80,6 @@ export default function CartPage() {
     <div className="min-h-screen bg-white dark:bg-[#060908] text-gray-900 dark:text-white py-10 px-4 md:px-8 selection:bg-emerald-500 selection:text-black transition-colors duration-300">
       <Toaster position="top-center" />
       
-      {/* Payment Loading Overlay */}
-      {paymentPending && (
-        <div className="fixed inset-0 bg-white/90 dark:bg-[#060908]/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 text-center">
-          <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mb-6 animate-pulse">
-            <Smartphone className="w-10 h-10 text-emerald-600 dark:text-emerald-400 animate-bounce" />
-          </div>
-          <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-2">Awaiting M-Pesa Payment</h2>
-          <p className="text-gray-600 dark:text-gray-400 text-sm max-w-sm mb-8">
-            Please check your phone. An M-Pesa prompt has been sent to your number. Enter your PIN to complete the Ksh {totalAmount.toLocaleString()} payment.
-          </p>
-          <div className="flex gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-500 animate-ping delay-75"></div>
-            <div className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-500 animate-ping delay-150"></div>
-            <div className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-500 animate-ping delay-300"></div>
-          </div>
-        </div>
-      )}
-
       <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-serif mb-8 tracking-tight">Shopping Bag</h1>
         
@@ -197,7 +151,7 @@ export default function CartPage() {
 
           {/* Checkout Form */}
           <div className="lg:col-span-5 bg-gray-50 dark:bg-[#0E1512] border border-emerald-500/20 p-6 rounded-3xl shadow-xl transition-colors">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-6 pb-3 border-b border-emerald-500/10">Customer Details</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-6 pb-3 border-b border-emerald-500/10">Delivery Details</h2>
             
             <form onSubmit={handleCheckout} className="space-y-4">
               <div>
@@ -206,13 +160,13 @@ export default function CartPage() {
               </div>
               
               <div>
-                <label className="block text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-1.5">M-Pesa Number</label>
-                <input required type="tel" name="customer_phone" className="w-full rounded-xl bg-white dark:bg-black border border-emerald-500/30 px-4 py-3 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="07XX XXX XXX or 2547XX..." />
+                <label className="block text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-1.5">WhatsApp Number</label>
+                <input required type="tel" name="customer_phone" className="w-full rounded-xl bg-white dark:bg-black border border-emerald-500/30 px-4 py-3 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="07XX XXX XXX (For payment info)" />
               </div>
               
               <div>
                 <label className="block text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-1.5">Delivery Location</label>
-                <input required type="text" name="location" className="w-full rounded-xl bg-white dark:bg-black border border-emerald-500/30 px-4 py-3 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Thika, Kiambu" />
+                <input required type="text" name="location" className="w-full rounded-xl bg-white dark:bg-black border border-emerald-500/30 px-4 py-3 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="E.g. Kimbo, Ruiru" />
               </div>
 
               <button 
@@ -220,8 +174,12 @@ export default function CartPage() {
                 type="submit" 
                 className="w-full bg-[#10b981] hover:bg-[#059669] text-black font-extrabold uppercase text-xs tracking-widest py-4 rounded-xl disabled:opacity-50 mt-6 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {isSubmitting ? 'Processing...' : <>Pay with M-Pesa <Smartphone className="w-4 h-4" /></>}
+                {isSubmitting ? 'Processing...' : <>Place Order & Arrange Delivery <MessageCircle className="w-4 h-4" /></>}
               </button>
+              
+              <p className="text-[10px] text-gray-500 text-center mt-3">
+                Nova Fragrances Nbo will contact you via WhatsApp to arrange secure payment and dispatch.
+              </p>
             </form>
           </div>
 

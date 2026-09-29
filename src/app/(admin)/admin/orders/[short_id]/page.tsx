@@ -2,7 +2,7 @@ import { sql } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
-import { ArrowLeft, Package, MapPin, Phone, User, Calendar } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Phone, User, CheckCircle2 } from 'lucide-react';
 
 export default async function AdminOrderDetailPage({
   params,
@@ -10,18 +10,23 @@ export default async function AdminOrderDetailPage({
   params: Promise<{ short_id: string }>;
 }) {
   const resolvedParams = await params;
-  const shortId = resolvedParams.short_id;
+  // This param could be either a short_id or the full UUID depending on the link clicked
+  const queryId = resolvedParams.short_id;
 
-  // 1. Fetch the main order details
-  const orders = await sql`SELECT * FROM Orders WHERE short_id = ${shortId}`;
+  // 1. Fetch the main order details (checks both short_id and order_id columns)
+  const orders = await sql`
+    SELECT * FROM Orders 
+    WHERE short_id = ${queryId} OR order_id::text = ${queryId}
+  `;
   
   if (orders.length === 0) {
     notFound();
   }
   
   const order = orders[0];
+  const displayId = order.short_id || order.order_id.substring(0, 8).toUpperCase();
 
-  // 2. Fetch the specific fragrances bought in this order by joining Order_Items and Products
+  // 2. Fetch the specific fragrances bought in this order
   const items = await sql`
     SELECT oi.quantity, oi.price_at_purchase, p.name, p.image_url, p.category 
     FROM Order_Items oi
@@ -29,14 +34,23 @@ export default async function AdminOrderDetailPage({
     WHERE oi.order_id = ${order.order_id}
   `;
 
-  // Server Action: Update Status
-  async function updateStatus(formData: FormData) {
+  // Server Action: Update Delivery Status
+  async function updateDeliveryStatus(formData: FormData) {
     'use server';
     const newStatus = formData.get('delivery_status') as string;
     await sql`UPDATE Orders SET delivery_status = ${newStatus} WHERE order_id = ${order.order_id}`;
     
-    // Refresh this page and the main table
-    revalidatePath(`/admin/orders/${shortId}`);
+    revalidatePath(`/admin/orders/${queryId}`);
+    revalidatePath('/admin/orders');
+  }
+
+  // Server Action: Update Payment Status
+  async function updatePaymentStatus(formData: FormData) {
+    'use server';
+    const newStatus = formData.get('payment_status') as string;
+    await sql`UPDATE Orders SET payment_status = ${newStatus} WHERE order_id = ${order.order_id}`;
+    
+    revalidatePath(`/admin/orders/${queryId}`);
     revalidatePath('/admin/orders');
   }
 
@@ -50,34 +64,50 @@ export default async function AdminOrderDetailPage({
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-serif text-emerald-600 dark:text-emerald-400">Order #{order.short_id}</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage packing and delivery status</p>
+            <h1 className="text-3xl font-serif text-emerald-600 dark:text-emerald-400">Order #{displayId}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage payment and dispatch</p>
           </div>
-          <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider inline-block text-center ${
-            order.payment_status === 'Paid' 
-              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' 
-              : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-          }`}>
-            M-Pesa: {order.payment_status}
-          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Left Column: Customer & Action Panel */}
+          {/* Left Column: Actions & Details */}
           <div className="md:col-span-1 space-y-6">
             
-            {/* Status Updater */}
+            {/* Payment Updater */}
+            <div className="bg-gray-50 dark:bg-[#0E1512] border border-amber-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+              <div className={`absolute top-0 left-0 w-1 h-full ${order.payment_status === 'Paid' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4 pl-2">Payment Status</h2>
+              <form action={updatePaymentStatus} className="space-y-4">
+                <select 
+                  name="payment_status" 
+                  defaultValue={order.payment_status || 'Pending Payment'}
+                  className="w-full bg-white dark:bg-black border border-emerald-500/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                >
+                  <option value="Pending Payment">🕒 Pending Payment</option>
+                  <option value="Paid">💰 Marked as Paid</option>
+                  <option value="Cancelled">❌ Cancelled</option>
+                </select>
+                <button 
+                  type="submit"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-black py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors shadow-md cursor-pointer"
+                >
+                  Update Payment
+                </button>
+              </form>
+            </div>
+
+            {/* Delivery Updater */}
             <div className="bg-gray-50 dark:bg-[#0E1512] border border-emerald-500/20 rounded-2xl p-6 shadow-xl">
               <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">Delivery Status</h2>
-              <form action={updateStatus} className="space-y-4">
+              <form action={updateDeliveryStatus} className="space-y-4">
                 <select 
                   name="delivery_status" 
                   defaultValue={order.delivery_status || 'Processing'}
                   className="w-full bg-white dark:bg-black border border-emerald-500/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
                 >
-                  <option value="Processing">📦 Processing</option>
-                  <option value="Dispatched">🚚 Dispatched</option>
+                  <option value="Processing">📦 Processing (Packing)</option>
+                  <option value="Dispatched">🚚 Dispatched (In Transit)</option>
                   <option value="Delivered">✅ Delivered</option>
                 </select>
                 <button 
@@ -91,7 +121,7 @@ export default async function AdminOrderDetailPage({
 
             {/* Customer Details */}
             <div className="bg-gray-50 dark:bg-[#0E1512] border border-emerald-500/20 rounded-2xl p-6 shadow-xl">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">Customer Details</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">Customer Info</h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <User className="w-4 h-4 text-emerald-500 mt-0.5" />
@@ -110,7 +140,7 @@ export default async function AdminOrderDetailPage({
                 <div className="flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-emerald-500 mt-0.5" />
                   <div>
-                    <p className="text-[10px] uppercase text-gray-500">Delivery Location</p>
+                    <p className="text-[10px] uppercase text-gray-500">Location</p>
                     <p className="text-sm font-bold">{order.location}</p>
                   </div>
                 </div>
@@ -124,7 +154,7 @@ export default async function AdminOrderDetailPage({
             <div className="bg-gray-50 dark:bg-[#0E1512] border border-emerald-500/20 rounded-2xl p-6 shadow-xl h-full">
               <div className="flex items-center gap-2 border-b border-emerald-500/10 pb-4 mb-4">
                 <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <h2 className="text-sm font-bold uppercase tracking-widest">Items to Pack</h2>
+                <h2 className="text-sm font-bold uppercase tracking-widest">Requested Items</h2>
               </div>
 
               <div className="space-y-4">
@@ -150,7 +180,7 @@ export default async function AdminOrderDetailPage({
               </div>
 
               <div className="mt-6 pt-4 border-t border-emerald-500/10 flex justify-between items-center">
-                <span className="text-xs uppercase tracking-widest text-gray-500">Total Paid</span>
+                <span className="text-xs uppercase tracking-widest text-gray-500">Order Total</span>
                 <span className="text-xl font-mono font-bold text-amber-600 dark:text-amber-400">Ksh {Number(order.total_price).toLocaleString()}</span>
               </div>
             </div>
